@@ -4,6 +4,7 @@ package edu.seg2105.edu.server.backend;
 // license found at www.lloseng.com 
 
 
+import edu.seg2105.client.backend.ServerConsole;
 import ocsf.server.*;
 
 /**
@@ -49,7 +50,12 @@ public class EchoServer extends AbstractServer
     (Object msg, ConnectionToClient client)
   {
     System.out.println("Message received: " + msg + " from " + client);
-    this.sendToAllClients(msg);
+    if(((String)msg).startsWith("#login")) {
+    	String[] s = ((String)msg).split(" ");
+    	client.setInfo("userid", s[1]);
+    }else {
+    	this.sendToAllClients((String)client.getInfo("userid") + ": " + msg);
+    }
   }
     
   /**
@@ -72,6 +78,50 @@ public class EchoServer extends AbstractServer
       ("Server has stopped listening for connections.");
   }
   
+  /**
+	 * Hook method called each time a new client connection is
+	 * accepted. The default implementation does nothing.
+	 * @param client the connection connected to the client.
+	 */
+	protected void clientConnected(ConnectionToClient client) {
+		this.sendToAllClients("Hello, " + client + "! Welcome to simpleChat!");
+		System.out.println(client + " has connected.");
+	}
+  
+  /** Hook method called each time a client disconnects.
+	 * The default implementation does nothing. The method
+	 * may be overridden by subclasses but should remains synchronized.
+	 *
+	 * @param client the connection with the client.
+	 */
+	synchronized protected void clientDisconnected(ConnectionToClient client) {
+		this.sendToAllClients("Goodbye " + client + "! Thank you for using simpleChat!");
+		System.out.println(client + " has disconnected.");
+	}
+
+	/**
+	 * Hook method called each time an exception is thrown in a
+	 * ConnectionToClient thread.
+	 * The method may be overridden by subclasses but should remains
+	 * synchronized.
+	 *
+	 * @param client the client that raised the exception.
+	 * @param Throwable the exception thrown.
+	 */
+	synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
+		System.out.println(client + " has run into a " + exception.getMessage() + " exception.");
+	}
+
+	/**
+	 * Hook method called when the server is clased.
+	 * The default implementation does nothing. This method may be
+	 * overriden by subclasses. When the server is closed while still
+	 * listening, serverStopped() will also be called.
+	 */
+	protected void serverClosed() {
+		System.out.println("Server has been closed");
+	}
+
   
   //Class methods ***************************************************
   
@@ -105,6 +155,9 @@ public class EchoServer extends AbstractServer
     {
       System.out.println("ERROR - Could not listen for clients!");
     }
+    
+    ServerConsole server = new ServerConsole(sv);
+    server.accept();
   }
 }
 //End of EchoServer class
